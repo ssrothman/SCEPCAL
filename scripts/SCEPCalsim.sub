@@ -1,0 +1,9 @@
+executable            = SCEPCalsim.sh
+output                = output/SCEPCalsim$(ClusterId).$(ProcId).out
+error                 = output/SCEPCalsim$(ClusterId).$(ProcId).err
+log                   = output/SCEPCalsim$(ClusterId).$(ProcId).log
+should_transfer_files = Yes
+when_to_transfer_output = ON_EXIT
++JobFlavour="workday"
++MaxRuntime = 3600
+queue

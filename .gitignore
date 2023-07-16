@@ -1,0 +1,6 @@
+build
+install
+output
+edm4dr/src
+edm4dr/edm4dr
+edm4dr/podio_generated_files.cmake
