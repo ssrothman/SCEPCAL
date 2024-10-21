@@ -1,8 +1,8 @@
 # Segmented Crystal Electromagnetic Precision Calorimeter (SCEPCal)
 
-![SCEPCAL3d](https://github.com/SCEPCAL/SCEPCAL/blob/main/examples/scepcal3d.png?raw=true)
+![SCEPCAL3d](https://github.com/wonyongc/SCEPCal/blob/main/examples/scepcal3d.png?raw=true)
 
-Repository for full simulation and analysis.
+Repository for full simulation and analysis. Above: Dark/light blue: front/rear projective crystals. Red/green: timing layer crystals. Purple/yellow: front/rear non-projective crystals to mitigate projective gaps.
 
 ## Citations
 
@@ -57,14 +57,19 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MY_INSTALL_DIR/lib64
 export PYTHONPATH=$PYTHONPATH:$MY_INSTALL_DIR/python
 ```
 
-## Running the simulation
-
-Set all options in the steering file `scripts/scepcal_steering.py` and/or set them via the command line at runtime. See `scripts/dd4hep_steering_template.py` for explanations of all options. Refer to dd4hep documentation for more details.
+After compilation/installation, subsequent uses in new sessions need only:
 
 ```sh
-cd $TOP_DIR
-ddsim scripts/scepcal_steering.py
+source /cvmfs/sw.hsf.org/key4hep/setup.sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MY_INSTALL_DIR/lib64
+export PYTHONPATH=$PYTHONPATH:$MY_INSTALL_DIR/python
 ```
+
+## Running the simulation
+
+
+### Steering file
+Set all options in the steering file `scripts/scepcal_steering.py` and/or set them via the command line at runtime. See `scripts/dd4hep_steering_template.py` for explanations of all options. Refer to dd4hep documentation for more details.
 
 ### Simulation Options
 
@@ -76,15 +81,206 @@ Disabled by default. Change in `scripts/scepcal_steering.py` to enable:
 opticalPhysics = True
 ```
 
-#### Example particle gun input
+Currently, every detector cell (regardless of whether it is a crystal or an actual sipm block) records the wavelength and time bins for optical photon hits in the cell. Only the first primary optical photon in a single cell is propagated. Subsequent daughter optical photons generated in the same cell are terminated. Any optical photons reaching the SiPM modules are terminated.
+
+#### Event selection
+
+Input MC files can be set in the steering file (see the template for a list of accepted formats), or the built-in ddsim particle gun can be used. If both are enabled, both will run. `wzp6_ee_ZZ_test_ecm240_1k.stdhep` with 1k events is provided as an example:
+
+```python
+SIM.inputFiles = ['examples/wzp6_ee_ZZ_test_ecm240_1k.stdhep']
+```
+
+To run,
+
+```sh
+cd $TOP_DIR
+ddsim scripts/scepcal_steering.py
+```
+
+or, using command line options,
 
 ```sh
 ddsim --steeringFile scripts/scepcal_steering.py -G --gun.direction "1 1 0" --gun.energy "1*GeV" --gun.particle="gamma" -O gamma_1GeV.root
 ```
 
-#### Changing the Geometry
+#### edm4hep output classes
+
+Each event in `gamma_1GeV.root` contains the trees `SCEPCal_readout` and `MCParticles`.
+
+Hits in `SCEPCal_readout` have the following schema as defined in `edm4dr.yaml`. The windows and number of bins for wavelength and timing are hardcoded and can be changed in `include/DRCrystalHit.h` and `edm4dr.yaml` if desired, and the code recompiled. The defaults are 300-1000 nm and 0-300 ns with 6000 bins.
+
+```yaml
+edm4dr::SimDRCalorimeterHit:
+  Description: "Simulated dual-readout calorimeter hit"
+  Author: "Wonyong Chung"
+  Members:
+    - uint64_t cellID                           // detector cellID
+    - float energy [GeV]                        // energy of the hit
+    - edm4hep::Vector3f position [mm]           // position of the calorimeter cell in world coords
+    - int32_t eta                               // detector cell eta
+    - int32_t phi                               // detector cell phi
+    - int32_t depth                             // detector cell depth
+    - int32_t system                            // detector cell system
+    - int32_t ncerenkov                         // number of cerenkov hits
+    - int32_t nscintillator                     // number of scint hits
+    - std::array<int32_t, 6000> nwavelen_cer    // number of cerenkov wavelength hits
+    - std::array<int32_t, 6000> nwavelen_scint  // number of scint wavelength hits
+    - std::array<int32_t, 6000> ntime_cer       // number of cerenkov time hits
+    - std::array<int32_t, 6000> ntime_scint     // number of scint hits
+```
+Hits in `MCParticles` are default edm4hep classes:
+
+```yaml
+edm4hep::MCParticle:
+  Description: "The Monte Carlo particle - based on the lcio::MCParticle."
+  Author: "F.Gaede, DESY"
+  Members:
+    - int32_t PDG
+    - int32_t generatorStatus
+    - int32_t simulatorStatus
+    - float charge
+    - float time
+    - double mass
+    - edm4hep::Vector3d vertex
+    - edm4hep::Vector3d endpoint
+    - edm4hep::Vector3f momentum
+    - edm4hep::Vector3f momentumAtEndpoint
+    - edm4hep::Vector3f spin
+    - edm4hep::Vector2i colorFlow
+```
+
+
+
+#### Analysis
+
+The same ROOT environment as used when running the simulation should be used to run any analysis on ROOT files, as ROOT needs to be aware of the edm4hep/edm4dr dictionary in order to process the file.
+
+#### Convert to hdf5
+
+Alternatively, a script to convert the ROOT file to an hdf5 file is provided for offline/notebook analysis.
+
+```sh
+python scripts/convertROOT2HDF5.py gamma_1GeV.root
+```
+
+This will produce the file `gamma_1GeV.hdf5` with the following file structure:
+
+```
+/
+├── Events
+│   ├── Event_0001
+│   │   ├── HitCollection
+│   │   │   ├── cellID              (uint64)
+│   │   │   ├── E                   (float32)
+│   │   │   ├── x                   (float32)
+│   │   │   ├── y                   (float32)
+│   │   │   ├── z                   (float32)
+│   │   │   ├── system              (int32)
+│   │   │   ├── eta                 (int32)
+│   │   │   ├── phi                 (int32)
+│   │   │   ├── depth               (int32)
+│   │   │   ├── ncerenkov           (int32)
+│   │   │   ├── nscintillator       (int32)
+│   │   │   ├── nwavelen_cer        (int32, shape=(N, 6000))
+│   │   │   ├── nwavelen_scint      (int32, shape=(N, 6000))
+│   │   │   ├── ntime_cer           (int32, shape=(N, 6000))
+│   │   │   ├── ntime_scint         (int32, shape=(N, 6000))
+│   │   │   ├── r                   (float32)
+│   │   │   ├── theta               (float32)
+│   │   │   └── phi                 (float32)
+│   │   ├── MCCollection
+│   │       ├── PDG                 (int32)
+│   │       ├── generatorStatus     (int32)
+│   │       ├── simulatorStatus     (int32)
+│   │       ├── charge              (float32)
+│   │       ├── time                (float32)
+│   │       ├── mass                (float64)
+│   │       ├── vx                  (float64)
+│   │       ├── vy                  (float64)
+│   │       ├── vz                  (float64)
+│   │       ├── endx                (float64)
+│   │       ├── endy                (float64)
+│   │       ├── endz                (float64)
+│   │       ├── px                  (float32)
+│   │       ├── py                  (float32)
+│   │       ├── pz                  (float32)
+│   │       ├── endpx               (float32)
+│   │       ├── endpy               (float32)
+│   │       ├── endpz               (float32)
+│   │       ├── spin_x              (float32)
+│   │       ├── spin_y              (float32)
+│   │       ├── spin_z              (float32)
+│   │       ├── colorFlow_x         (int32)
+│   │       └── colorFlow_y         (int32)
+│   ├── Event_0002
+│   │   ├── HitCollection
+│   │   │   └── ...
+│   │   ├── MCCollection
+│   │       └── ...
+│   └── ...
+```
+
+Python classes and functions to unpack and use the hdf5 file are provided in `scripts/scepcal.py`.
+
+#### Example python usage
+
+```python
+from scepcal import *
+
+hdf5file = 'gamma_10GeV_n10_isotrop.hdf5'
+SDhits_allevents, MCP_allevents = load_allevents_from_hdf5(hdf5file)
+SDhits = SDhits_allevents[0] #event number 0
+MCcoll = MCP_allevents[0]
+
+barrelHits = HitCollection( [ h for h in SDhits if h.system==1] )
+endcapHits = HitCollection( [ h for h in SDhits if h.system==2] )
+timingHits = HitCollection( [ h for h in SDhits if h.system==3] )
+
+layout = go.Layout(
+    autosize=False,
+    width=1000,
+    height=1000,
+    scene = dict(
+                xaxis = dict(range=[-250,250],),
+                yaxis = dict(range=[-250,250],),
+                zaxis = dict(range=[-250,250],),
+            )
+    )
+
+data = []
+for i in range(10):
+    hitmarkers = go.Scatter3d(
+            x=SDhits_allevents[i].x,
+            y=SDhits_allevents[i].y,
+            z=SDhits_allevents[i].z,
+            mode='markers',
+            marker={'size': 1}
+        )
+    data.append(hitmarkers)
+
+fig = go.Figure(data=data, layout=layout)
+plotly.offline.iplot(fig) 
+
+```
+![gamma_10GeV_n10_isotrop](https://github.com/wonyongc/SCEPCal/blob/main/examples/gamma_10GeV_n10_isotrop.png?raw=true)
+
+See `scepcal.py` for the hits and HitCollection definitions.
+
+
+#### Geometry Details / Changing the Geometry
 
 Detector dimensions and options are defined in `compact/SCEPCal.xml`. See [arXiv: 2408.11027](https://arxiv.org/abs/2408.11027) for details.
+
+The overall detector dimensions and crystal dimensions can be changed in the `<dim>` tag. The geometry construction is fully parameterized and will auto-generate the detector for the given inputs. 
+
+`phiSegments` determines the number of phi segmentations in the geometry, but only `phistart` to `phiend` will actually be constructed (for visualization purposes). Make sure `phiend` is set equal to `phiSegments` (and `phistart` is 0) for a full geometry.  `thetastart` in the endcap refers to how much of a gap in theta slices to leave for the beampipe. 5 is generally fine.
+
+A 10x scaled up version of the geometry (`compact/SCEPCal_10x.xml`) is provided for visualization purposes.
+
+PbWO and LYSO are included in the material definitions in the compact XML file.
+
+`projectiveFill` refers to the number of non-projective theta slices added, centered at z=0, used to offset the detector to mitigate projective gaps. These are colored in purple/yellow in the top image.
 
 ```xml
   <detectors>
@@ -99,7 +295,7 @@ Detector dimensions and options are defined in `compact/SCEPCal.xml`. See [arXiv
 
       <timing construct="true" phistart="0" phiend="128"/>
       <barrel construct="true" phistart="0" phiend="128"/>
-      <endcap construct="true" phistart="0" phiend="128" thetastart="15"/>
+      <endcap construct="true" phistart="0" phiend="128" thetastart="5"/>
 
       <dim    barrelHalfZ="2.25*m"
               barrelInnerR="2*m" 
