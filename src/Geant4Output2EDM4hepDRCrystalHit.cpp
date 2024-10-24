@@ -358,7 +358,7 @@ void Geant4Output2EDM4hepDRCrystalHit::saveEvent(OutputContext<G4Event>& ctxt)  
   int runNumber(0), eventNumber(0);
   const int eventNumberOffset(m_eventNumberOffset > 0 ? m_eventNumberOffset : 0);
   const int runNumberOffset(m_runNumberOffset > 0 ? m_runNumberOffset : 0);
-  double eventWeight{0};
+  std::optional<double> eventWeight{0};
   if ( parameters ) {
     runNumber = parameters->runNumber() + runNumberOffset;
     eventNumber = parameters->eventNumber() + eventNumberOffset;
@@ -376,7 +376,7 @@ void Geant4Output2EDM4hepDRCrystalHit::saveEvent(OutputContext<G4Event>& ctxt)  
   auto header = header_collection.create();
   header.setRunNumber(runNumber);
   header.setEventNumber(eventNumber);
-  header.setWeight(eventWeight);
+  header.setWeight(eventWeight.value());
   header.setTimeStamp( std::time(nullptr) ) ;
   m_frame.put( std::move(header_collection), "EventHeader");
 
