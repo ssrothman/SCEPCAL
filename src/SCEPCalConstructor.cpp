@@ -218,6 +218,10 @@ create_detector_SCEPCal(dd4hep::Detector &theDetector,xml_h xmlElement,dd4hep::S
 
   ScepcalDetElement.setPlacement(barrelPlacedVol);
 
+  int numCrystalsBarrel = 0;
+  int numCrystalsEndcap = 0;
+  int numCrystalsTiming = 0;
+
   for (int iPhi=CONSTRUCT_BARREL? BARREL_PHI_START:BARREL_PHI_END;iPhi<BARREL_PHI_END;iPhi++) {
     double phiEnvBarrel=iPhi*D_PHI_GLOBAL;
     
@@ -303,6 +307,8 @@ create_detector_SCEPCal(dd4hep::Detector &theDetector,xml_h xmlElement,dd4hep::S
         sipmTrp2.addPhysVolID("eta",nTile*nCy+nC);
         sipmTrp2.addPhysVolID("phi",iPhi);
         sipmTrp2.addPhysVolID("depth",8);
+
+        numCrystalsTiming+=2;
       }
     }
 
@@ -382,6 +388,9 @@ create_detector_SCEPCal(dd4hep::Detector &theDetector,xml_h xmlElement,dd4hep::S
         crystalRp.addPhysVolID("eta",N_THETA_ENDCAP+iTheta);
         crystalRp.addPhysVolID("phi",iPhi*N_PHI_BARREL_CRYSTAL+nGamma);
         crystalRp.addPhysVolID("depth",2);
+
+        numCrystalsBarrel+=2;
+
       }
 
       for (int iTheta=0; iTheta<N_PROJECTIVE_FILL; iTheta++) {
@@ -442,6 +451,8 @@ create_detector_SCEPCal(dd4hep::Detector &theDetector,xml_h xmlElement,dd4hep::S
         crystalRp.addPhysVolID("eta",iTheta);
         crystalRp.addPhysVolID("phi",iPhi*N_PHI_BARREL_CRYSTAL+nGamma);
         crystalRp.addPhysVolID("depth",2);
+
+        numCrystalsBarrel+=2;
       }
     }
   }
@@ -546,9 +557,20 @@ create_detector_SCEPCal(dd4hep::Detector &theDetector,xml_h xmlElement,dd4hep::S
         crystalRp1.addPhysVolID("eta",N_THETA_ENDCAP+N_THETA_BARREL+N_THETA_ENDCAP-iTheta);
         crystalRp1.addPhysVolID("phi",iPhi*nPhiEndcapCrystal+nGamma);
         crystalRp1.addPhysVolID("depth",2);
+
+        numCrystalsEndcap+=2;
       }
     }
   }
+
+  std::cout                                                         << std::endl;
+  std::cout                                                         << std::endl;
+  std::cout << "NUM_CRYSTALS_BARREL:  " << numCrystalsBarrel        << std::endl;
+  std::cout << "NUM_CRYSTALS_ENDCAP:  " << numCrystalsEndcap        << std::endl;
+  std::cout << "NUM_CRYSTALS_TIMING:  " << numCrystalsTiming        << std::endl;
+  std::cout                                                         << std::endl;
+  std::cout                                                         << std::endl;
+
   return ScepcalDetElement;
 }
 

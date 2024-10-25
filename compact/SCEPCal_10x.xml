@@ -1014,18 +1014,18 @@
               sensitive="true">
       <sensitive type="SegmentedCrystalCalorimeter"/>
 
-      <timing construct="true" phistart="0" phiend="128"/>
-      <barrel construct="true" phistart="0" phiend="128"/>
-      <endcap construct="true" phistart="0" phiend="128" thetastart="10"/>
+      <timing construct="true" phistart="0" phiend="16"/>
+      <barrel construct="true" phistart="0" phiend="16"/>
+      <endcap construct="true" phistart="0" phiend="16" thetastart="3"/>
 
       <dim    barrelHalfZ="2.25*m"
               barrelInnerR="2*m" 
-              crystalFaceWidthNominal="10*mm"
-              crystalFlength="50*mm"
-              crystalRlength="150*mm"
-              crystalTimingThicknessNominal="3*mm"
-              sipmThickness="0.5*mm"
-              phiSegments="128"
+              crystalFaceWidthNominal="100*mm"
+              crystalFlength="500*mm"
+              crystalRlength="1500*mm"
+              crystalTimingThicknessNominal="30*mm"
+              sipmThickness="5*mm"
+              phiSegments="16"
               projectiveFill="3"
       />
 
