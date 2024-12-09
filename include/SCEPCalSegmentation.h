@@ -21,7 +21,7 @@ class SCEPCalSegmentation : public Segmentation {
 
         virtual Vector3D position(const CellID& aCellID) const;
 
-        virtual Vector3D myPosition(const CellID& aCellID) ;
+        virtual Vector3D myPosition(const CellID& aCellID) const;
 
         virtual CellID cellID(const Vector3D& aLocalPosition,
                               const Vector3D& aGlobalPosition,

@@ -81,7 +81,7 @@ Disabled by default. Change in `scripts/scepcal_steering.py` to enable:
 opticalPhysics = True
 ```
 
-Currently, every detector cell (regardless of whether it is a crystal or an actual sipm block) records the wavelength and time bins for optical photon hits in the cell. Only the first primary optical photon in a single cell is propagated. Subsequent daughter optical photons generated in the same cell are terminated. Any optical photons reaching the SiPM modules are terminated.
+With optical physics enabled, primary S/C generated photons are counted and then immediately killed, i.e. no secondaries are counted or propagated.
 
 #### Event selection
 
@@ -108,7 +108,7 @@ ddsim --steeringFile scripts/scepcal_steering.py -G --gun.direction "1 1 0" --gu
 
 Each event in `gamma_1GeV.root` contains the trees `SCEPCal_readout` and `MCParticles`.
 
-Hits in `SCEPCal_readout` have the following schema as defined in `edm4dr.yaml`. The windows and number of bins for wavelength and timing are hardcoded and can be changed in `include/DRCrystalHit.h` and `edm4dr.yaml` if desired, and the code recompiled. The defaults are 300-1000 nm and 0-300 ns with 6000 bins.
+Hits in `SCEPCal_readout` have the following schema as defined in `edm4dr.yaml`. Currently only the number of S/C photons produced and their average arrival times are recorded. Scale factors and poisson smearing can be applied offline.
 
 ```yaml
 edm4dr::SimDRCalorimeterHit:
@@ -118,16 +118,10 @@ edm4dr::SimDRCalorimeterHit:
     - uint64_t cellID                           // detector cellID
     - float energy [GeV]                        // energy of the hit
     - edm4hep::Vector3f position [mm]           // position of the calorimeter cell in world coords
-    - int32_t eta                               // detector cell eta
-    - int32_t phi                               // detector cell phi
-    - int32_t depth                             // detector cell depth
-    - int32_t system                            // detector cell system
-    - int32_t ncerenkov                         // number of cerenkov hits
-    - int32_t nscintillator                     // number of scint hits
-    - std::array<int32_t, 6000> nwavelen_cer    // number of cerenkov wavelength hits
-    - std::array<int32_t, 6000> nwavelen_scint  // number of scint wavelength hits
-    - std::array<int32_t, 6000> ntime_cer       // number of cerenkov time hits
-    - std::array<int32_t, 6000> ntime_scint     // number of scint hits
+    - int32_t nCerenkovProd                     // number of cerenkov photons produced
+    - int32_t nScintillationProd                // number of scint photons produced
+    - float tAvgC [ns]                          // avg arrival time for cerenkov photons
+    - float tAvgS [ns]                          // avg arrival time for scint photons
 ```
 Hits in `MCParticles` are default edm4hep classes:
 
@@ -149,8 +143,6 @@ edm4hep::MCParticle:
     - edm4hep::Vector3f spin
     - edm4hep::Vector2i colorFlow
 ```
-
-
 
 #### Analysis
 
@@ -180,12 +172,10 @@ This will produce the file `gamma_1GeV.hdf5` with the following file structure:
 │   │   │   ├── eta                 (int32)
 │   │   │   ├── phi                 (int32)
 │   │   │   ├── depth               (int32)
-│   │   │   ├── ncerenkov           (int32)
-│   │   │   ├── nscintillator       (int32)
-│   │   │   ├── nwavelen_cer        (int32, shape=(N, 6000))
-│   │   │   ├── nwavelen_scint      (int32, shape=(N, 6000))
-│   │   │   ├── ntime_cer           (int32, shape=(N, 6000))
-│   │   │   ├── ntime_scint         (int32, shape=(N, 6000))
+│   │   │   ├── ncerenkovprod       (int32)
+│   │   │   ├── nscintillationprod  (int32)
+│   │   │   ├── tavgc               (float32)
+│   │   │   ├── tavgs               (float32)
 │   │   │   ├── r                   (float32)
 │   │   │   ├── theta               (float32)
 │   │   │   └── phi                 (float32)
@@ -221,7 +211,7 @@ This will produce the file `gamma_1GeV.hdf5` with the following file structure:
 │   └── ...
 ```
 
-Python classes and functions to unpack and use the hdf5 file are provided in `scripts/scepcal.py`.
+Python classes and functions to unpack and use the hdf5 file are provided in `scripts/scepcal_utils.py`.
 
 #### Example python usage
 
@@ -265,7 +255,7 @@ plotly.offline.iplot(fig)
 ```
 ![gamma_10GeV_n10_isotrop](https://github.com/wonyongc/SCEPCal/blob/main/examples/gamma_10GeV_n10_isotrop.png?raw=true)
 
-See `scepcal.py` for the hits and HitCollection definitions.
+See `scepcal_utils.py` for the hits and HitCollection definitions.
 
 
 #### Geometry Details / Changing the Geometry

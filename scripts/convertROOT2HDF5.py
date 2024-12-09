@@ -10,6 +10,19 @@ if len(sys.argv) > 1:
 else:
     sys.exit("No input ROOT file specified.")
 
+def getsystem(cellID):
+    return cellID & 0b1111   # system last 4 bits
+
+def geteta(cellID):
+    return (cellID>>4) & 0b11111111111    # eta preceding 11 bits
+
+def getphi(cellID):
+    return (cellID>>15) & 0b11111111111     # phi preceding 11 bits
+
+def getdepth(cellID):
+    return (cellID>>26) & 0b1111            # depth preceding 4 bits
+
+
 class MCParticle():
     def __init__(self, mcp):
         self.PDG                = mcp.PDG
@@ -70,48 +83,51 @@ class MCCollection():
             yield mcp
 
 class RawHit():
+    # Takes edm4hep SimCalorimeterDRHit
     def __init__(self, hit):
         self.cellID           = hit.cellID
         self.E                = hit.energy
         self.x                = hit.position.x
         self.y                = hit.position.y
         self.z                = hit.position.z
-        self.system           = hit.system
-        self.neta             = hit.eta
-        self.nphi             = hit.phi
-        self.ndepth           = hit.depth
-        self.ncerenkov        = hit.ncerenkov
-        self.nscintillator    = hit.nscintillator
-        self.nwavelen_cer     = np.array(hit.nwavelen_cer)
-        self.nwavelen_scint   = np.array(hit.nwavelen_scint)
-        self.ntime_cer        = np.array(hit.ntime_cer)
-        self.ntime_scint      = np.array(hit.ntime_scint)
+
+        # convert from readout bits
+        self.system           = getsystem(self.cellID)
+        self.neta             = geteta(self.cellID)
+        self.nphi             = getphi(self.cellID)
+        self.ndepth           = getdepth(self.cellID)
+
+        self.ncerenkovprod      = hit.nCerenkovProd
+        self.nscintillationprod = hit.nScintillationProd
+        self.tavgc              = hit.tAvgC
+        self.tavgs              = hit.tAvgS
+
         self.r                = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         self.theta            = acos(self.z / self.r) if self.r != 0 else 0
         self.phi              = atan2(self.y, self.x)
+        # self.contribs = hit.contributions  # one-to-many relations not implemented in python classes
 
 class HitCollection():
+    # Takes python array of RawHit
     def __init__(self, rawhits):
-        self.hits             = np.array(rawhits)
-        self.N                = len(rawhits)
-        self.cellID           = np.array([hit.cellID                   for hit in self.hits])
-        self.E                = np.array([hit.E                        for hit in self.hits])
-        self.x                = np.array([hit.x                        for hit in self.hits])
-        self.y                = np.array([hit.y                        for hit in self.hits])
-        self.z                = np.array([hit.z                        for hit in self.hits])
-        self.system           = np.array([hit.system                   for hit in self.hits])
-        self.neta             = np.array([hit.neta                     for hit in self.hits])
-        self.nphi             = np.array([hit.nphi                     for hit in self.hits])
-        self.ndepth           = np.array([hit.ndepth                   for hit in self.hits])
-        self.ncerenkov        = np.array([np.array(hit.ncerenkov)      for hit in self.hits])
-        self.nscintillator    = np.array([np.array(hit.nscintillator)  for hit in self.hits])
-        self.nwavelen_cer     = np.array([np.array(hit.nwavelen_cer)   for hit in self.hits])
-        self.nwavelen_scint   = np.array([np.array(hit.nwavelen_scint) for hit in self.hits])
-        self.ntime_cer        = np.array([np.array(hit.ntime_cer)      for hit in self.hits])
-        self.ntime_scint      = np.array([np.array(hit.ntime_scint)    for hit in self.hits])
-        self.r                = np.array([hit.r                        for hit in self.hits])
-        self.theta            = np.array([hit.theta                    for hit in self.hits])
-        self.phi              = np.array([hit.phi                      for hit in self.hits])
+        self.hits                = np.array(rawhits)
+        self.N                   = len(rawhits)
+        self.cellID              = np.array([hit.cellID              for hit in self.hits])
+        self.E                   = np.array([hit.E                   for hit in self.hits])
+        self.x                   = np.array([hit.x                   for hit in self.hits])
+        self.y                   = np.array([hit.y                   for hit in self.hits])
+        self.z                   = np.array([hit.z                   for hit in self.hits])
+        self.system              = np.array([hit.system              for hit in self.hits])
+        self.neta                = np.array([hit.neta                for hit in self.hits])
+        self.nphi                = np.array([hit.nphi                for hit in self.hits])
+        self.ndepth              = np.array([hit.ndepth              for hit in self.hits])
+        self.ncerenkovprod       = np.array([hit.ncerenkovprod       for hit in self.hits])
+        self.nscintillationprod  = np.array([hit.nscintillationprod  for hit in self.hits])
+        self.tavgc               = np.array([hit.tavgc               for hit in self.hits])
+        self.tavgs               = np.array([hit.tavgs               for hit in self.hits])
+        self.r                = np.array([hit.r                      for hit in self.hits])
+        self.theta            = np.array([hit.theta                  for hit in self.hits])
+        self.phi              = np.array([hit.phi                    for hit in self.hits])
     def __iter__(self):
         for hit in self.hits:
             yield hit
@@ -159,28 +175,18 @@ def save_allevents_to_hdf5(SDhits_allevents, MCP_allevents, filename):
                 'neta': 'int32',
                 'nphi': 'int32',
                 'ndepth': 'int32',
-                'ncerenkov': 'int32',
-                'nscintillator': 'int32',
-                'nwavelen_cer': 'int32',
-                'nwavelen_scint': 'int32',
-                'ntime_cer': 'int32',
-                'ntime_scint': 'int32',
+                'ncerenkovprod': 'int32',
+                'nscintillationprod': 'int32',
+                'tavgc': 'float32',
+                'tavgs': 'float32',
                 'r': 'float32',
                 'theta': 'float32',
                 'phi': 'float32'
             }
-            
+                    
             for attr, dtype in hit_attrs.items():
                 data = getattr(hc, attr)
-                
-                if attr in ['nwavelen_cer', 'nwavelen_scint', 'ntime_cer', 'ntime_scint']:
-                    if hc.N > 0:
-                        data_array = np.stack(data)
-                        hits_grp.create_dataset(attr, data=data_array, dtype=dtype, compression="gzip", compression_opts=4)
-                    else:
-                        hits_grp.create_dataset(attr, shape=(0, 6000), dtype=dtype, compression="gzip", compression_opts=4)
-                else:
-                    hits_grp.create_dataset(attr, data=data, dtype=dtype)
+                hits_grp.create_dataset(attr, data=data, dtype=dtype, compression="gzip", compression_opts=4)
             
             mc_grp = event_grp.create_group('MCCollection')
             

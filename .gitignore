@@ -4,3 +4,4 @@ output
 edm4dr/src
 edm4dr/edm4dr
 edm4dr/podio_generated_files.cmake
+scripts/__pycache__
