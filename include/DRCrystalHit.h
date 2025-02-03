@@ -21,8 +21,8 @@ namespace SCEPCal {
         
         int           nCerenkovProd;
         int           nScintillationProd;
-        double        tAvgC;
-        double        tAvgS;
+        double        tSumC;
+        double        tSumS;
         
       public:
         DRCrystalHit();

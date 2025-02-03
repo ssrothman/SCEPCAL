@@ -8,14 +8,14 @@
 #include "DRCrystalHit.h"
 
 SCEPCal::DRCrystalHit::DRCrystalHit()
-: Geant4HitData(), position(), truth(), energyDeposit(0), nCerenkovProd(0), nScintillationProd(0), tAvgC(0), tAvgS(0) {
+: Geant4HitData(), position(), truth(), energyDeposit(0), nCerenkovProd(0), nScintillationProd(0), tSumC(0), tSumS(0) {
 
   dd4hep::InstanceCount::increment(this);
 
 }
 
 SCEPCal::DRCrystalHit::DRCrystalHit(const Position& pos)
-: Geant4HitData(), position(pos), truth(), energyDeposit(0), nCerenkovProd(0), nScintillationProd(0), tAvgC(0), tAvgS(0) {
+: Geant4HitData(), position(pos), truth(), energyDeposit(0), nCerenkovProd(0), nScintillationProd(0), tSumC(0), tSumS(0) {
 
   dd4hep::InstanceCount::increment(this);
 

@@ -18,19 +18,19 @@ SIM.macroFile = ""
 opticalPhysics = False
 
 # SIM.inputFiles = ['examples/wzp6_ee_ZZ_test_ecm240_1k.stdhep']
-# SIM.outputFile = 'examples/wzp6_ee_ZZ_test_ecm240_n1_cut0_BEonly.root'
+SIM.outputFile = 'gamma_10MeV_noopt.root'
 SIM.numberOfEvents = 1
 SIM.skipNEvents = 0
 
 SIM.gun.multiplicity = 1
-# SIM.gun.position = (0, 0, 0)  #(0, 0, -50.0*mm)  #(0, 0, 50.0*mm)  #(0, 0, 0)
-# SIM.gun.direction = (1, 1, 0)
+SIM.gun.position = (0, 0, 0)  #(0, 0, -50.0*mm)  #(0, 0, 50.0*mm)  #(0, 0, 0)
+SIM.gun.direction = (1, 1, 1)
 # SIM.gun.isotrop = False
 # SIM.gun.distribution = 'uniform'
-# SIM.gun.energy = 10*GeV
-# SIM.gun.particle = "gamma"
-SIM.gun.momentumMin = 10.0*MeV-10*keV  #10.00000*GeV
-SIM.gun.momentumMax = 10.0*MeV+10*keV  #10.00001*GeV
+SIM.gun.energy = 10*MeV
+SIM.gun.particle = "gamma"
+# SIM.gun.momentumMin = 10.0*MeV-10*keV  #10.00000*GeV
+# SIM.gun.momentumMax = 10.0*MeV+10*keV  #10.00001*GeV
 # SIM.gun.phiMin = 10*pi/180.0
 # SIM.gun.phiMax = 10*pi/180.0
 # SIM.gun.thetaMin = (90-10)*pi/180.0  
@@ -38,7 +38,7 @@ SIM.gun.momentumMax = 10.0*MeV+10*keV  #10.00001*GeV
 def setupEDM4hepOutputDR(dd4hepSimulation):
      from DDG4 import EventAction, Kernel
      dd = dd4hepSimulation
-     evt_edm4hep = EventAction(Kernel(), 'Geant4Output2EDM4hepDRCrystalHitSimple/' + dd.outputFile, True)
+     evt_edm4hep = EventAction(Kernel(), 'Geant4Output2EDM4hepDRCrystalHit/' + dd.outputFile, True)
      evt_edm4hep.Control = True
      output = dd.outputFile
      if not dd.outputFile.endswith(dd.outputConfig.myExtension):

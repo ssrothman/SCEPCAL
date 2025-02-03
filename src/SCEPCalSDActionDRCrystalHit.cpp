@@ -10,10 +10,6 @@
 #include "G4VProcess.hh"
 
 namespace SCEPCal {
-  G4double convertEvtoNm(G4double energy)
-  {
-    return 1239.84187/energy*1000.; //GeV to nm
-  }
 
   class SegmentedCrystalCalorimeterSD_DRHit {
     public:
@@ -65,6 +61,7 @@ namespace dd4hep {
         coll->add(cellID, hit);
 
       }
+      
       G4Track * track =  step->GetTrack();
 
       if(track->GetDefinition()==G4OpticalPhoton::OpticalPhotonDefinition()) {
@@ -78,20 +75,20 @@ namespace dd4hep {
 
         if (track->GetCreatorProcess()->G4VProcess::GetProcessName()=="CerenkovPhys") {
           if(phstep==1) {
-            float tAvgC_new = (((hit->tAvgC)*(hit->nCerenkovProd)) +avgarrival)/(hit->nCerenkovProd+1);
+            // sum all times here, then divide by count when writing to output
             hit->nCerenkovProd+=1;
-            hit->tAvgC = tAvgC_new;
+            hit->tSumC+= avgarrival;
           }
-          track->SetTrackStatus(fStopAndKill);
+          // track->SetTrackStatus(fStopAndKill);
         } 
 
         else if (track->GetCreatorProcess()->G4VProcess::GetProcessName()=="ScintillationPhys") {
           if(phstep==1) {
-            float tAvgS_new = (((hit->tAvgS)*(hit->nScintillationProd)) +avgarrival)/(hit->nScintillationProd+1);
+            // sum all times here, then divide by count when writing to output
             hit->nScintillationProd+=1;
-            hit->tAvgS = tAvgS_new;
+            hit->tSumS+= avgarrival;
           }
-          track->SetTrackStatus(fStopAndKill);
+          // track->SetTrackStatus(fStopAndKill);
         }
 
       }

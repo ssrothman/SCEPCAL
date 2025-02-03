@@ -2,8 +2,8 @@
 // Author: Wonyong Chung
 //         Princeton University
 //===============================
-#ifndef DD4HEP_DDG4_Geant4Output2EDM4hepDRCrystalHitSimple_H
-#define DD4HEP_DDG4_Geant4Output2EDM4hepDRCrystalHitSimple_H
+#ifndef DD4HEP_DDG4_Geant4Output2EDM4hepDRCrystalHit_H
+#define DD4HEP_DDG4_Geant4Output2EDM4hepDRCrystalHit_H
 #include <DD4hep/Detector.h>
 #include <DDG4/EventParameters.h>
 #include <DDG4/Geant4OutputAction.h>
@@ -11,7 +11,7 @@
 #include <edm4hep/MCParticleCollection.h>
 #include <edm4hep/SimTrackerHitCollection.h>
 #include <edm4hep/CaloHitContributionCollection.h>
-#include <edm4dr/SimDRCalorimeterHitSimpleCollection.h>
+#include <edm4dr/SimDRCalorimeterHitCollection.h>
 #include "DRCrystalHit.h"
 #include <podio/Frame.h>
 #include <podio/ROOTFrameWriter.h>
@@ -23,14 +23,14 @@ namespace dd4hep {
 
   namespace sim {
 
-    class  Geant4ParticleMap;
+    class Geant4ParticleMap;
 
-    class Geant4Output2EDM4hepDRCrystalHitSimple : public Geant4OutputAction  {
+    class Geant4Output2EDM4hepDRCrystalHit : public Geant4OutputAction  {
     protected:
       using writer_t = podio::ROOTFrameWriter;
       using stringmap_t = std::map< std::string, std::string >;
       using trackermap_t = std::map< std::string, edm4hep::SimTrackerHitCollection >;
-      using calorimeterpair_t = std::pair< edm4dr::SimDRCalorimeterHitSimpleCollection, edm4hep::CaloHitContributionCollection >;
+      using calorimeterpair_t = std::pair< edm4dr::SimDRCalorimeterHitCollection, edm4hep::CaloHitContributionCollection >;
       using calorimetermap_t = std::map< std::string, calorimeterpair_t >;
 
       std::unique_ptr<writer_t>     m_file  { };
@@ -54,8 +54,8 @@ namespace dd4hep {
       void saveFileMetaData();
 
     public:
-      Geant4Output2EDM4hepDRCrystalHitSimple(Geant4Context* ctxt, const std::string& nam);
-      virtual ~Geant4Output2EDM4hepDRCrystalHitSimple();
+      Geant4Output2EDM4hepDRCrystalHit(Geant4Context* ctxt, const std::string& nam);
+      virtual ~Geant4Output2EDM4hepDRCrystalHit();
       virtual void beginRun(const G4Run* run);
       virtual void endRun(const G4Run* run);
       virtual void saveRun(const G4Run* run);
@@ -148,9 +148,9 @@ namespace {
 }
 
 #include <DDG4/Factories.h>
-DECLARE_GEANT4ACTION(Geant4Output2EDM4hepDRCrystalHitSimple)
+DECLARE_GEANT4ACTION(Geant4Output2EDM4hepDRCrystalHit)
 
-Geant4Output2EDM4hepDRCrystalHitSimple::Geant4Output2EDM4hepDRCrystalHitSimple(Geant4Context* ctxt, const std::string& nam)
+Geant4Output2EDM4hepDRCrystalHit::Geant4Output2EDM4hepDRCrystalHit(Geant4Context* ctxt, const std::string& nam)
 : Geant4OutputAction(ctxt,nam), m_runNo(0), m_runNumberOffset(0), m_eventNumberOffset(0)
 {
   declareProperty("RunHeader",             m_runHeader);
@@ -165,13 +165,13 @@ Geant4Output2EDM4hepDRCrystalHitSimple::Geant4Output2EDM4hepDRCrystalHitSimple(G
   InstanceCount::increment(this);
 }
 
-Geant4Output2EDM4hepDRCrystalHitSimple::~Geant4Output2EDM4hepDRCrystalHitSimple()  {
+Geant4Output2EDM4hepDRCrystalHit::~Geant4Output2EDM4hepDRCrystalHit()  {
   G4AutoLock protection_lock(&action_mutex);
   m_file.reset();
   InstanceCount::decrement(this);
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::beginRun(const G4Run* run)  {
+void Geant4Output2EDM4hepDRCrystalHit::beginRun(const G4Run* run)  {
   G4AutoLock protection_lock(&action_mutex);
   std::string fname = m_output;
   m_runNo = run->GetRunID();
@@ -186,11 +186,11 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::beginRun(const G4Run* run)  {
     if ( !m_file )   {
       fatal("+++ Failed to open output file: %s", fname.c_str());
     }
-    printout( INFO, "Geant4Output2EDM4hepDRCrystalHitSimple" ,"Opened %s for output", fname.c_str() ) ;
+    printout( INFO, "Geant4Output2EDM4hepDRCrystalHit" ,"Opened %s for output", fname.c_str() ) ;
   }
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::endRun(const G4Run* run)  {
+void Geant4Output2EDM4hepDRCrystalHit::endRun(const G4Run* run)  {
   saveRun(run);
   saveFileMetaData();
   if ( m_file )   {
@@ -199,7 +199,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::endRun(const G4Run* run)  {
   }
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::saveFileMetaData() {
+void Geant4Output2EDM4hepDRCrystalHit::saveFileMetaData() {
   podio::Frame metaFrame{};
   for (const auto& [name, encodingStr] : m_cellIDEncodingStrings) {
     metaFrame.putParameter(name + "__CellIDEncoding", encodingStr);
@@ -208,7 +208,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveFileMetaData() {
   m_file->writeFrame(metaFrame, "metadata");
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::commit( OutputContext<G4Event>& /* ctxt */)   {
+void Geant4Output2EDM4hepDRCrystalHit::commit( OutputContext<G4Event>& /* ctxt */)   {
   if ( m_file )   {
     G4AutoLock protection_lock(&action_mutex);
     m_frame.put( std::move(m_particles), "MCParticles");
@@ -229,7 +229,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::commit( OutputContext<G4Event>& /* 
   except("+++ Failed to write output file. [Stream is not open]");
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::saveRun(const G4Run* run)   {
+void Geant4Output2EDM4hepDRCrystalHit::saveRun(const G4Run* run)   {
   G4AutoLock protection_lock(&action_mutex);
   podio::Frame runHeader  {};
   for (const auto& [key, value] : m_runHeader)
@@ -249,7 +249,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveRun(const G4Run* run)   {
   m_file->writeFrame(runHeader, "runs");
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::begin(const G4Event* event)  {
+void Geant4Output2EDM4hepDRCrystalHit::begin(const G4Event* event)  {
   m_eventNo = event->GetEventID();
   m_frame = {};
   m_particles = {};
@@ -257,7 +257,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::begin(const G4Event* event)  {
   m_calorimeterHits.clear();
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::saveParticles(Geant4ParticleMap* particles)    {
+void Geant4Output2EDM4hepDRCrystalHit::saveParticles(Geant4ParticleMap* particles)    {
   typedef detail::ReferenceBitMask<const int> PropertyMask;
   typedef Geant4ParticleMap::ParticleMap ParticleMap;
   const ParticleMap& pm = particles->particleMap;
@@ -353,7 +353,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveParticles(Geant4ParticleMap* pa
   }
 }
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::saveEvent(OutputContext<G4Event>& ctxt)  {
+void Geant4Output2EDM4hepDRCrystalHit::saveEvent(OutputContext<G4Event>& ctxt)  {
   EventParameters* parameters = context()->event().extension<EventParameters>(false);
   int runNumber(0), eventNumber(0);
   const int eventNumberOffset(m_eventNumberOffset > 0 ? m_eventNumberOffset : 0);
@@ -364,13 +364,13 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveEvent(OutputContext<G4Event>& c
     eventNumber = parameters->eventNumber() + eventNumberOffset;
     parameters->extractParameters(m_frame);
     #if podio_VERSION_MAJOR > 0 || podio_VERSION_MINOR > 16 || podio_VERSION_PATCH > 2
-    eventWeight = m_frame.getParameter<double>("EventWeights");
+    eventWeight = m_frame.getParameter<double>("EventWeights").value_or(0.0);
     #endif
   } else {
     runNumber = m_runNo + runNumberOffset;
     eventNumber = ctxt.context->GetEventID() + eventNumberOffset;
   }
-  printout(INFO,"Geant4Output2EDM4hepDRCrystalHitSimple","+++ Saving EDM4hep event %d run %d.", eventNumber, runNumber);
+  printout(INFO,"Geant4Output2EDM4hepDRCrystalHit","+++ Saving EDM4hep event %d run %d.", eventNumber, runNumber);
 
   edm4hep::EventHeaderCollection header_collection;
   auto header = header_collection.create();
@@ -403,7 +403,7 @@ private:
   Geant4HitCollection* m_coll{nullptr};
 };
 
-void Geant4Output2EDM4hepDRCrystalHitSimple::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VHitsCollection* collection)  {
+void Geant4Output2EDM4hepDRCrystalHit::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VHitsCollection* collection)  {
   
   Geant4HitCollection* coll = dynamic_cast<Geant4HitCollection*>(collection);
 
@@ -444,7 +444,7 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveCollection(OutputContext<G4Even
       }
     }
   }
-  else if( typeid( DRCrystalHitSimple ) == coll->type().type() ){
+  else if( typeid( DRCrystalHit ) == coll->type().type() ){
     
     Geant4Sensitive* sd = coll->sensitive();
     int hit_creation_mode = sd->hitCreationMode();
@@ -454,10 +454,10 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveCollection(OutputContext<G4Even
     for(unsigned i=0 ; i < nhits ; ++i){
     
       auto sch = hits.first->create();
-      const DRCrystalHitSimple* hit = coll->hit(i);
+      const DRCrystalHit* hit = coll->hit(i);
 
       const auto& pos = hit->position;
-      edm4hep::Vector3f hitpos( float(pos.x()/CLHEP::mm), float(pos.y()/CLHEP::mm), float(pos.z()/CLHEP::mm) );
+      edm4hep::Vector3f hitpos( 10*pos.x(), 10*pos.y(), 10*pos.z() ); // returns in cm, convert to mm
 
       sch.setCellID( hit->cellID );
       sch.setPosition( hitpos );
@@ -466,8 +466,8 @@ void Geant4Output2EDM4hepDRCrystalHitSimple::saveCollection(OutputContext<G4Even
       sch.setNCerenkovProd(     hit->nCerenkovProd );
       sch.setNScintillationProd(hit->nScintillationProd );
 
-      sch.setTAvgS( hit->tAvgC );
-      sch.setTAvgS( hit->tAvgS );
+      sch.setTAvgC( hit->tSumC / hit->nCerenkovProd );
+      sch.setTAvgS( hit->tSumS / hit->nScintillationProd );
 
       for(auto ci=hit->truth.begin(); ci != hit->truth.end(); ++ci){
 

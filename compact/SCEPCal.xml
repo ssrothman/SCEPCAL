@@ -1006,7 +1006,7 @@
   </define>
 
   <detectors>
-    <detector id="1"
+    <detector id="4"
               name="SCEPCal"
               type="SegmentedCrystalECAL" 
               readout="SCEPCal_readout"
@@ -1014,12 +1014,12 @@
               sensitive="true">
       <sensitive type="SegmentedCrystalCalorimeter"/>
 
-      <timing construct="true" phistart="0" phiend="128"/>
+      <timing construct="false" phistart="0" phiend="128"/>
       <barrel construct="true" phistart="0" phiend="128"/>
-      <endcap construct="true" phistart="0" phiend="128" thetastart="10"/>
+      <endcap construct="true" phistart="0" phiend="128" thetastart="35"/>
 
-      <dim    barrelHalfZ="2.25*m"
-              barrelInnerR="2*m" 
+      <dim    barrelHalfZ="2.40*m"
+              barrelInnerR="2.25*m" 
               crystalFaceWidthNominal="10*mm"
               crystalFlength="50*mm"
               crystalRlength="150*mm"
