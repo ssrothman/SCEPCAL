@@ -1,129 +1,173 @@
 # Segmented Crystal Electromagnetic Precision Calorimeter (SCEPCal)
 
-![SCEPCAL3d](https://github.com/wonyongc/SCEPCal/blob/main/examples/scepcal3d.png?raw=true)
+![SCEPCAL3d](https://github.com/wonyongc/SCEPCal/blob/main/example/SCEPCal_3d.png?raw=true)
+![IDEAfull](https://github.com/wonyongc/SCEPCal/blob/main/example/IDEA_full_labeled.png?raw=true)
 
-Repository for full simulation and analysis. Above: Dark/light blue: front/rear projective crystals. Red/green: timing layer crystals. Purple/yellow: front/rear non-projective crystals to mitigate projective gaps.
+Repository for full simulation in dd4hep. Above: Dark/light blue: front/rear projective crystals. Green: timing layer crystals.
 
-## Citations
+## Reference
 
 W. Chung, Differentiable Full Detector Simulation of a Projective Dual-Readout Crystal Electromagnetic Calorimeter with Longitudinal Segmentation and Precision Timing (2024). [arXiv: 2408.11027](https://arxiv.org/abs/2408.11027)
-
-M. T. Lucchini, W. Chung, S. C. Eno, Y. Lai, L. Lucchini, M.-T. Nguyen, C. G. Tully, New Perspectives on Segmented Crystal Calorimeters for Future Colliders, JINST 15 (11) (2020) P11005. [arXiv:2008.00338](https://arxiv.org/abs/2008.00338), [doi:10.1088/1748-0221/15/11/P11005](https://doi.org/10.1088/1748-0221/15/11/P11005)
 
 ### BiBTeX
 
 ```
-@misc{chung2024_differentiable-full-sim,
-      title={Differentiable Full Detector Simulation of a Projective Dual-Readout Crystal Electromagnetic Calorimeter with Longitudinal Segmentation and Precision Timing}, 
-      author={Wonyong Chung},
-      year={2024},
-      eprint={2408.11027},
-      archivePrefix={arXiv},
-      primaryClass={physics.ins-det},
-      url={https://arxiv.org/abs/2408.11027}, 
-}
-
-@article{Lucchini_2020,
-   title={New perspectives on segmented crystal calorimeters for future colliders},
-   volume={15},
-   ISSN={1748-0221},
-   url={http://dx.doi.org/10.1088/1748-0221/15/11/P11005},
-   DOI={10.1088/1748-0221/15/11/p11005},
-   number={11},
-   journal={Journal of Instrumentation},
-   publisher={IOP Publishing},
-   author={M.T. Lucchini, W. Chung, S.C. Eno, Y. Lai, L. Lucchini, M. Nguyen, and C.G. Tully},
-   year={2020},
-   month=nov, pages={P11005–P11005}
+@article{wchung_calor2024,
+	author = {{Chung, Wonyong}},
+	title = {Differentiable Full Detector Simulation of a Projective Dual-Readout Crystal Electromagnetic Calorimeter with Longitudinal Segmentation and Precision Timing},
+	DOI= "10.1051/epjconf/202532000052",
+	url= "https://doi.org/10.1051/epjconf/202532000052",
+	journal = {EPJ Web Conf.},
+	year = 2025,
+	volume = 320,
+	pages = "00052",
 }
 ```
+## Compile/Install (lxplus9)
 
-## Compile/Install on lxplus9
+### Use my install
+
+You are free to use my install by doing the following:
 
 ```sh
-git clone git@github.com:wonyongc/SCEPCal.git
-cd SCEPCal
+source /cvmfs/sw.hsf.org/key4hep/setup.sh
+source /eos/user/w/wochung/src/k4geo/install/bin/thisk4geo.sh
+```
+Otherwise, you are free to compile your own copy:
+
+```sh
+git clone git@github.com:wonyongc/k4geo.git
+cd k4geo
+git switch scepcal_with_readme # Make sure to checkout the scepcal branch
 mkdir build install
 
-export TOP_DIR=$PWD
-export MY_INSTALL_DIR=$PWD/install
-
 source /cvmfs/sw.hsf.org/key4hep/setup.sh
 
-cd build; cmake -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR -DPython_EXECUTABLE=$(which python) ..
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=../install -DPython_EXECUTABLE=$(which python) ..
 make install -j4
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MY_INSTALL_DIR/lib64
-export PYTHONPATH=$PYTHONPATH:$MY_INSTALL_DIR/python
+source ../install/bin/thisk4geo.sh
 ```
-
 After compilation/installation, subsequent uses in new sessions need only:
-
 ```sh
 source /cvmfs/sw.hsf.org/key4hep/setup.sh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MY_INSTALL_DIR/lib64
-export PYTHONPATH=$PYTHONPATH:$MY_INSTALL_DIR/python
+source /your/install/bin/thisk4geo.sh
 ```
 
-## Running the simulation
+
+## To run
+
+```sh
+ddsim --steeringFile example/scepcal_steering.py
+```
+or, using command line options,
+```sh
+ddsim --steeringFile example/scepcal_steering.py -G --gun.direction "1 1 0" --gun.energy "1*GeV" --gun.particle="gamma" -O gamma_1GeV.root
+```
+
+### Crystal Geometry
+
+Detector dimensions and options are defined in the `<define>` tag in `compact/SCEPCal.xml`. The interesting parameters are the crystal widths and front/rear tower divisions. The tower width (theta width) refers to the nominal square width of a single crystal tower, which will then contain the specified number of NxN crystals for the front and rear compartments. Care should be taken to make sure these numbers are consistent with what is intended. A tower width of 1cm with 1F/1R divisions will make the default 1:1 configuration of 1x1cm crystals for both front/rear. A tower width of 3cm with a 3F/2R division will make a 3x3 array of 1x1cm front crystals, and a 2x2 array of 1.5x1.5cm rear crystals, etc. (All dimensions nominal).
+
+![SCEPCal_CrystalTowerDivisions](https://github.com/wonyongc/SCEPCal/blob/main/example/SCEPCal_CrystalTowerDivisions.png?raw=true)
 
 
-### Steering file
-Set all options in the steering file `scripts/scepcal_steering.py` and/or set them via the command line at runtime. See `scripts/dd4hep_steering_template.py` for explanations of all options. Refer to dd4hep documentation for more details.
+```xml
+  <define>
+    <!-- Likely do not need to be changed -->
+    <constant name="scepcal_barrel_half_z" value="2.45*m"/>
+    <constant name="scepcal_barrel_inner_r" value="2.25*m"/>
+    <constant name="scepcal_phi_segments" value="128"/>
+    <constant name="scepcal_beampipe_opening" value="45*cm"/>
+    <constant name="scepcal_mainlayer_reargap" value="1*cm"/>
+    <constant name="scepcal_timinglayer_gap" value="1*cm"/>
+    <constant name="scepcal_projective_offset_r" value="10*cm"/>
+    <constant name="scepcal_projective_offset_x" value="10*cm"/>
 
-### Simulation Options
+    <!-- Nominal square width of a single crystal tower -->
+    <constant name="scepcal_xtal_theta_width" value="1*cm"/>
 
-#### Optical Physics
+    <!-- Square NxN divisions of front/rear crystals in a single tower -->
+    <constant name="scepcal_xtal_divisions_f" value="1"/>
+    <constant name="scepcal_xtal_divisions_r" value="1"/>
 
-Disabled by default. Change in `scripts/scepcal_steering.py` to enable:
+    <!-- Longitudinal length of front/rear crystals -->
+    <constant name="scepcal_xtal_length_f" value="5*cm"/>
+    <constant name="scepcal_xtal_length_r" value="15*cm"/>
+
+    <!-- Timing crystals -->
+    <constant name="scepcal_timing_xtal_depth" value="5*mm"/>
+    <constant name="scepcal_timing_xtal_length" value="10*cm"/>
+  </define>
+```
+
+### Steering File
+
+Set all options in the steering file `example/scepcal_steering.py`. Relevant parameters are gathered at the top of the file:
 
 ```python
-opticalPhysics = True
-```
+settings = {
+     'opticalPhysics': setupCerenkovScint, # or setupCerenkovOnly
+     'edep' : 1*keV,
 
-With optical physics enabled, primary S/C generated photons are counted and then immediately killed, i.e. no secondaries are counted or propagated.
+     'N'        : 1,
+     
+     'MC'       : False,
+     'MC_file'  : '/your/mc/file',
+
+     'gun'      : True,
+     'particle' : 'e-',
+     'momentum' : 10*GeV,
+     'plusminus': 0.05*10*GeV,
+     'theta'    : [(10)*pi/180.0,(170)*pi/180.0],
+     'phi'      : [(0)*pi/180.0, (360)*pi/180.0],
+
+     'compactFile': '../compact/SCEPCal.xml'
+}
+```
+Parameters can also be set via the command line at runtime. See `example/dd4hep_steering_template.py` for explanations of all options. Refer to dd4hep documentation for more details.
 
 #### Event selection
 
-Input MC files can be set in the steering file (see the template for a list of accepted formats), or the built-in ddsim particle gun can be used. If both are enabled, both will run. `wzp6_ee_ZZ_test_ecm240_1k.stdhep` with 1k events is provided as an example:
+Input MC files can be set in the steering file as above (see the template for a list of accepted formats), or the built-in ddsim particle gun can be used. If both are enabled, both will run. `wzp6_ee_ZZ_test_ecm240_1k.stdhep` with 1k events is provided as an example (lxplus only):
 
 ```python
-SIM.inputFiles = ['examples/wzp6_ee_ZZ_test_ecm240_1k.stdhep']
+SIM.inputFiles = ['example/wzp6_ee_ZZ_test_ecm240_1k.stdhep']
 ```
 
-To run,
+## Readout Collections
 
-```sh
-cd $TOP_DIR
-ddsim scripts/scepcal_steering.py
+An example output file with the full IDEA detector can be found here:
+```
+/eos/user/w/wochung/wzp6_ee_ZZ_test_ecm240_1k_N10.root
 ```
 
-or, using command line options,
-
-```sh
-ddsim --steeringFile scripts/scepcal_steering.py -G --gun.direction "1 1 0" --gun.energy "1*GeV" --gun.particle="gamma" -O gamma_1GeV.root
+There are three readout collections for each layer, Main and Timing:
 ```
+SCEPCal_MainEdep
+SCEPCal_MainScounts
+SCEPCal_MainCcounts
 
-#### edm4hep output classes
+SCEPCal_TimingEdep
+SCEPCal_TimingScounts
+SCEPCal_TimingCcounts
+```
+All collections are of type `edm4hep::SimCalorimeterHit`. The Edep collections save energy deposits for all particles, subject to the edep filter threshold. The S/C count collections save only the counts of generated S/C photons, which are counted at the first step and then killed. The counts are saved as the "energy" of the hit (a workaround requested to avoid having to introduce a custom readout class). MC Particles are saved but MC step constributions have been disabled to save disk space.
 
-Each event in `gamma_1GeV.root` contains the trees `SCEPCal_readout` and `MCParticles`.
-
-Hits in `SCEPCal_readout` have the following schema as defined in `edm4dr.yaml`. Currently only the number of S/C photons produced and their average arrival times are recorded. Scale factors and poisson smearing can be applied offline.
+### edm4hep::SimCalorimeterHit
 
 ```yaml
-edm4dr::SimDRCalorimeterHit:
-  Description: "Simulated dual-readout calorimeter hit"
-  Author: "Wonyong Chung"
+edm4hep::SimCalorimeterHit:
+  Description: "Simulated calorimeter hit"
+  Author: "EDM4hep authors"
   Members:
-    - uint64_t cellID                           // detector cellID
-    - float energy [GeV]                        // energy of the hit
-    - edm4hep::Vector3f position [mm]           // position of the calorimeter cell in world coords
-    - int32_t nCerenkovProd                     // number of cerenkov photons produced
-    - int32_t nScintillationProd                // number of scint photons produced
-    - float tAvgC [ns]                          // avg arrival time for cerenkov photons
-    - float tAvgS [ns]                          // avg arrival time for scint photons
+    - uint64_t cellID                      // ID of the sensor that created this hit
+    - float energy [GeV]                   // energy of the hit
+    - edm4hep::Vector3f position [mm]      // position of the hit in world coordinates
+  OneToManyRelations:
+    - edm4hep::CaloHitContribution contributions  // Monte Carlo step contributions
 ```
-Hits in `MCParticles` are default edm4hep classes:
 
 ```yaml
 edm4hep::MCParticle:
@@ -144,189 +188,105 @@ edm4hep::MCParticle:
     - edm4hep::Vector2i colorFlow
 ```
 
-#### Analysis
+## Analysis
 
-The same ROOT environment as used when running the simulation should be used to run any analysis on ROOT files, as ROOT needs to be aware of the edm4hep/edm4dr dictionary in order to process the file.
+The same ROOT environment as used when running the simulation should be used to run any analysis on ROOT files, as ROOT needs to be aware of edm4hep in order to process the file. Utilities to read the ROOT collections into python objects are provided in `python/scepcal.py`.
 
-#### Convert to hdf5
 
-Alternatively, a script to convert the ROOT file to an hdf5 file is provided for offline/notebook analysis.
-
-```sh
-python scripts/convertROOT2HDF5.py gamma_1GeV.root
-```
-
-This will produce the file `gamma_1GeV.hdf5` with the following file structure:
-
-```
-/
-├── Events
-│   ├── Event_0001
-│   │   ├── HitCollection
-│   │   │   ├── cellID              (uint64)
-│   │   │   ├── E                   (float32)
-│   │   │   ├── x                   (float32)
-│   │   │   ├── y                   (float32)
-│   │   │   ├── z                   (float32)
-│   │   │   ├── system              (int32)
-│   │   │   ├── eta                 (int32)
-│   │   │   ├── phi                 (int32)
-│   │   │   ├── depth               (int32)
-│   │   │   ├── ncerenkovprod       (int32)
-│   │   │   ├── nscintillationprod  (int32)
-│   │   │   ├── tavgc               (float32)
-│   │   │   ├── tavgs               (float32)
-│   │   │   ├── r                   (float32)
-│   │   │   ├── theta               (float32)
-│   │   │   └── phi                 (float32)
-│   │   ├── MCCollection
-│   │       ├── PDG                 (int32)
-│   │       ├── generatorStatus     (int32)
-│   │       ├── simulatorStatus     (int32)
-│   │       ├── charge              (float32)
-│   │       ├── time                (float32)
-│   │       ├── mass                (float64)
-│   │       ├── vx                  (float64)
-│   │       ├── vy                  (float64)
-│   │       ├── vz                  (float64)
-│   │       ├── endx                (float64)
-│   │       ├── endy                (float64)
-│   │       ├── endz                (float64)
-│   │       ├── px                  (float32)
-│   │       ├── py                  (float32)
-│   │       ├── pz                  (float32)
-│   │       ├── endpx               (float32)
-│   │       ├── endpy               (float32)
-│   │       ├── endpz               (float32)
-│   │       ├── spin_x              (float32)
-│   │       ├── spin_y              (float32)
-│   │       ├── spin_z              (float32)
-│   │       ├── colorFlow_x         (int32)
-│   │       └── colorFlow_y         (int32)
-│   ├── Event_0002
-│   │   ├── HitCollection
-│   │   │   └── ...
-│   │   ├── MCCollection
-│   │       └── ...
-│   └── ...
-```
-
-Python classes and functions to unpack and use the hdf5 file are provided in `scripts/scepcal_utils.py`.
-
-#### Example python usage
+### Example reading ROOT output and making a simple 3D plot
 
 ```python
-from scepcal import *
+import plotly
+import plotly.graph_objs as go
+plotly.offline.init_notebook_mode()
+from scepcal.scepcal import *
 
-hdf5file = 'gamma_10GeV_n10_isotrop.hdf5'
-SDhits_allevents, MCP_allevents = load_allevents_from_hdf5(hdf5file)
-SDhits = SDhits_allevents[0] #event number 0
-MCcoll = MCP_allevents[0]
+# Define root collection (branch) names and hit types
+# Use https://github.com/wonyongc/k4geo/tree/scepcal to simulate the full IDEA detector to get the other subdetector collections
+collection_names_types = { 
+    "MCParticles":            { 'type': 'MCParticle' },
+    
+    # "LumiCalCollection":      { 'type': 'SimCalorimeterHit' },
+    
+    # "VertexBarrelCollection": { 'type': 'SimTrackerHit' },
+    # "VertexEndcapCollection": { 'type': 'SimTrackerHit' },
+    
+    # "DCHCollection":          { 'type': 'SimTrackerHit' },
+    
+    # "SiWrBCollection":        { 'type': 'SimTrackerHit' },
+    # "SiWrDCollection":        { 'type': 'SimTrackerHit' },
+    
+    "SCEPCal_MainEdep":       { 'type': 'SimCalorimeterHit' },
+    "SCEPCal_MainScounts":    { 'type': 'SimCalorimeterHit' },
+    "SCEPCal_MainCcounts":    { 'type': 'SimCalorimeterHit' },
 
-barrelHits = HitCollection( [ h for h in SDhits if h.system==1] )
-endcapHits = HitCollection( [ h for h in SDhits if h.system==2] )
-timingHits = HitCollection( [ h for h in SDhits if h.system==3] )
+    "SCEPCal_TimingEdep":       { 'type': 'SimCalorimeterHit' },
+    "SCEPCal_TimingScounts":    { 'type': 'SimCalorimeterHit' },
+    "SCEPCal_TimingCcounts":    { 'type': 'SimCalorimeterHit' },
 
+    # "DRBTScin":               { 'type': 'SimCalorimeterHit' },
+    # "DRBTCher":               { 'type': 'SimCalorimeterHit' },
+    
+    # "DRETScinLeft":           { 'type': 'SimCalorimeterHit' },
+    # "DRETScinRight":          { 'type': 'SimCalorimeterHit' },
+    # "DRETCherLeft":           { 'type': 'SimCalorimeterHit' },
+    # "DRETCherRight":          { 'type': 'SimCalorimeterHit' },
+    
+    # "MuonSystemCollection":   { 'type': 'SimTrackerHit' },
+}
+
+# Get all hits for all subdetectors, all events
+file = 'output.root'
+allHits = SubdetectorHitsForAllEvents(file, collection_names_types)
+
+# Get subdetector hits for one event
+event_num = 0
+SCEPCal_hits = allHits.getHits(event_num, 'SCEPCal_MainEdep')
+
+# Use python list comprehensions for easy filtering. System numbers defined in compact/SCEPCal.xml
+barrelHits = SimCalorimeterHitCollection( [ h for h in SCEPCal_hits if h.system==4] )
+endcapHits = SimCalorimeterHitCollection( [ h for h in SCEPCal_hits if h.system==5] )
+
+# Simple 3D plot
 layout = go.Layout(
     autosize=False,
     width=1000,
     height=1000,
     scene = dict(
-                xaxis = dict(range=[-250,250],),
-                yaxis = dict(range=[-250,250],),
-                zaxis = dict(range=[-250,250],),
+                xaxis = dict(range=[-3000,3000],),
+                yaxis = dict(range=[-3000,3000],),
+                zaxis = dict(range=[-3000,3000],),
             )
     )
 
 data = []
-for i in range(10):
-    hitmarkers = go.Scatter3d(
-            x=SDhits_allevents[i].x,
-            y=SDhits_allevents[i].y,
-            z=SDhits_allevents[i].z,
-            mode='markers',
-            marker={'size': 1}
-        )
-    data.append(hitmarkers)
+barrel_hitmarkers = go.Scatter3d(
+        x=barrelHits[i].x,
+        y=barrelHits[i].y,
+        z=barrelHits[i].z,
+        mode='markers',
+        marker={'size': 1, 'color': 'blue'}
+    )
+endcap_hitmarkers = go.Scatter3d(
+        x=barrelHits[i].x,
+        y=barrelHits[i].y,
+        z=barrelHits[i].z,
+        mode='markers',
+        marker={'size': 1, 'color': 'red'}
+    )
+data.extend(barrel_hitmarkers)
+data.extend(endcap_hitmarkers)
 
 fig = go.Figure(data=data, layout=layout)
 plotly.offline.iplot(fig) 
 
 ```
-![gamma_10GeV_n10_isotrop](https://github.com/wonyongc/SCEPCal/blob/main/examples/gamma_10GeV_n10_isotrop.png?raw=true)
-
-See `scepcal_utils.py` for the hits and HitCollection definitions.
-
-
-#### Geometry Details / Changing the Geometry
-
-Detector dimensions and options are defined in `compact/SCEPCal.xml`. See [arXiv: 2408.11027](https://arxiv.org/abs/2408.11027) for details.
-
-The overall detector dimensions and crystal dimensions can be changed in the `<dim>` tag. The geometry construction is fully parameterized and will auto-generate the detector for the given inputs. 
-
-`phiSegments` determines the number of phi segmentations in the geometry, but only `phistart` to `phiend` will actually be constructed (for visualization purposes). Make sure `phiend` is set equal to `phiSegments` (and `phistart` is 0) for a full geometry.  `thetastart` in the endcap refers to how much of a gap in theta slices to leave for the beampipe. 5 is generally fine.
-
-A 10x scaled up version of the geometry (`compact/SCEPCal_10x.xml`) is provided for visualization purposes.
-
-PbWO and LYSO are included in the material definitions in the compact XML file.
-
-`projectiveFill` refers to the number of non-projective theta slices added, centered at z=0, used to offset the detector to mitigate projective gaps. These are colored in purple/yellow in the top image.
-
-```xml
-  <detectors>
- 
-    <detector id="1"
-              name="SCEPCal"
-              type="SegmentedCrystalECAL" 
-              readout="SCEPCal_readout"
-              vis="scepcalAssemblyGlobalVis"
-              sensitive="true">
-      <sensitive type="SegmentedCrystalCalorimeter"/>
-
-      <timing construct="true" phistart="0" phiend="128"/>
-      <barrel construct="true" phistart="0" phiend="128"/>
-      <endcap construct="true" phistart="0" phiend="128" thetastart="5"/>
-
-      <dim    barrelHalfZ="2.25*m"
-              barrelInnerR="2*m" 
-              crystalFaceWidthNominal="10*mm"
-              crystalFlength="50*mm"
-              crystalRlength="150*mm"
-              crystalTimingThicknessNominal="3*mm"
-              sipmThickness="0.5*mm"
-              phiSegments="128"
-              projectiveFill="3"
-      />
-
-      <projF                                    vis="projectiveFillFVis"/>
-      <projR                                    vis="projectiveFillRVis"/>
-      <crystalF        material="PbWO"          vis="crystalFVis"/>
-      <crystalR        material="PbWO"          vis="crystalRVis"/>
-      <timingLayerLg   material="LYSO"          vis="timingVisLg"/>
-      <timingLayerTr   material="LYSO"          vis="timingVisTr"/>
-      <inst            material="AluminumOxide" vis="instVis"/>
-      <sipmLg          material="Silicon"       vis="sipmVisLg"/>
-      <sipmTr          material="Silicon"       vis="sipmVisTr"/>
-
-      <scepcalAssembly vis="scepcalAssemblyVis"/>
-      
-      <timingAssemblyGlobalVis  vis="timingAssemblyGlobalVis"/>
-      <barrelAssemblyGlobalVis  vis="barrelAssemblyGlobalVis"/>
-      <endcapAssemblyGlobalVis  vis="endcapAssemblyGlobalVis"/>
-
-      <scepcalAssemblyGlobalVis vis="scepcalAssemblyGlobalVis"/>
-
-    </detector>
-
-  </detectors>
-```
 
 ### Running on Condor
 
-Change the user directory paths in `scripts/SCEPCalsim.sh` and `scripts/SCEPCalsim.sub` to your own, and also change the path of the compact XML file in `scripts/scepcal_steering.py` to the absolute path rather than the relative path, e.g.:
+Change the user directory paths in `batch/condor/SCEPCalsim.sh` and `batch/condor/SCEPCalsim.sub` to your own, and also change the path of the compact XML file in `example/scepcal_steering.py` to the absolute path rather than the relative path, e.g.:
 
 ```python
-# SIM.compactFile = ['install/share/compact/SCEPCal.xml']
 SIM.compactFile = ['/eos/user/w/wochung/src/SCEPCal/compact/SCEPCal.xml']
 ```
 

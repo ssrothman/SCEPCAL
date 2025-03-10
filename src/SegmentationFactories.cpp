@@ -8,5 +8,8 @@ dd4hep::SegmentationObject* create_segmentation(const dd4hep::BitFieldCoder* dec
 }
 }
 
-#include "SCEPCalSegmentation.h"
-DECLARE_SEGMENTATION(SCEPCalSegmentation, create_segmentation<dd4hep::DDSegmentation::SCEPCalSegmentation>)
+#include "SCEPCal_MainSegmentation.h"
+DECLARE_SEGMENTATION(SCEPCal_MainSegmentation, create_segmentation<dd4hep::DDSegmentation::SCEPCal_MainSegmentation>)
+
+#include "SCEPCal_TimingSegmentation.h"
+DECLARE_SEGMENTATION(SCEPCal_TimingSegmentation, create_segmentation<dd4hep::DDSegmentation::SCEPCal_TimingSegmentation>)

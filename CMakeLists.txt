@@ -20,8 +20,6 @@ find_package(Geant4 REQUIRED)
 find_package(podio REQUIRED HINTS $ENV{PODIO})
 find_package(EDM4HEP REQUIRED HINTS $ENV{EDM4hep})
 
-add_subdirectory(edm4dr)
-
 if (DD4HEP_USE_GEANT4)
   dd4hep_add_dictionary(
     G__Scepcal
@@ -63,8 +61,6 @@ dd4hep_add_plugin (
           podio::podio
           podio::podioDict
           podio::podioRootIO
-          edm4dr
-          edm4dr::edm4drDict
 )
 
 target_include_directories(Scepcal PUBLIC include)

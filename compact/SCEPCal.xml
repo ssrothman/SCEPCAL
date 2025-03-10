@@ -930,7 +930,80 @@
       0.5*MeV 0.147
       1.0*MeV 0.3
     "/>
+    <matrix name="refl_PbWO4_to_OptGrease" coldim="2" values="
+      1.5*eV 0.03
+      2.0*eV 0.05
+      2.5*eV 0.06
+      3.0*eV 0.055
+      3.5*eV 0.075
+      4.0*eV 0.08  
+    "/>
+    <matrix name="transmit_PbWO4_to_OptGrease" coldim="2" values="
+      1.5*eV 0.97
+      2.0*eV 0.95
+      2.5*eV 0.94
+      3.0*eV 0.945
+      3.5*eV 0.925
+      4.0*eV 0.92 
+    "/>
+    <matrix name="refl_PbWO4_to_ESR" coldim="2" values="
+      1.5*eV 0.985
+      2.0*eV 0.985
+      2.5*eV 0.985
+      3.0*eV 0.985
+      3.14*eV 0.98
+      3.3*eV 0.90
+      3.5*eV 0.5
+      4.0*eV 0. 
+    "/>
+    <matrix name="transmit_PbWO4_to_ESR" coldim="2" values="
+      1.5*eV 0.015
+      2.0*eV 0.015
+      2.5*eV 0.015
+      3.0*eV 0.015
+      3.14*eV 0.02
+      3.3*eV 0.1
+      3.5*eV 0.5
+      4.0*eV 1.
+    "/>
+    <matrix name="refl_LYSO_to_ESR" coldim="2" values="
+      1.5*eV 0.985
+      2.0*eV 0.985
+      2.5*eV 0.985
+      3.0*eV 0.985
+      3.14*eV 0.98
+      3.3*eV 0.90
+      3.5*eV 0.5
+      4.0*eV 0. 
+    "/>
+    <matrix name="transmit_LYSO_to_ESR" coldim="2" values="
+      1.5*eV 0.015
+      2.0*eV 0.015
+      2.5*eV 0.015
+      3.0*eV 0.015
+      3.14*eV 0.02
+      3.3*eV 0.1
+      3.5*eV 0.5
+      4.0*eV 1.
+    "/>
   </properties>
+
+  <surfaces>
+    <opticalsurface name="/world/SCEPCal#PbWO4_to_OptGrease" finish="polishedvm2000glue" model="unified" type="dielectric_dielectric">
+      <property name="REFLECTIVITY" ref="refl_PbWO4_to_OptGrease"/>
+      <property name="TRANSMITTANCE" ref="transmit_PbWO4_to_OptGrease"/>
+    </opticalsurface>
+
+    <opticalsurface name="/world/SCEPCal#PbWO4_to_ESR" finish="polishedvm2000glue" model="unified" type="dielectric_dielectric">
+      <property name="REFLECTIVITY" ref="refl_PbWO4_to_ESR"/>
+      <property name="TRANSMITTANCE" ref="transmit_PbWO4_to_ESR"/>
+    </opticalsurface>
+
+    <opticalsurface name="/world/SCEPCal#LYSO_to_ESR" finish="polishedvm2000glue" model="unified" type="dielectric_dielectric">
+      <property name="REFLECTIVITY" ref="refl_LYSO_to_ESR"/>
+      <property name="TRANSMITTANCE" ref="transmit_LYSO_to_ESR"/>
+    </opticalsurface>
+  </surfaces>
 
   <materials>
     <material name="PbWO">
@@ -941,7 +1014,7 @@
       <property name="RINDEX"                       ref="RI_PbWO"/>
       <property name="ABSLENGTH"                    ref="AbsLen_PbWO"/>
       <property name="SCINTILLATIONCOMPONENT1"      ref="scintFast_PbWO"/>
-      <constant name="SCINTILLATIONYIELD"           value="200/MeV"/>
+      <constant name="SCINTILLATIONYIELD"           value="10/MeV"/>
       <constant name="SCINTILLATIONTIMECONSTANT1"   value="5.*ns"/>
       <constant name="SCINTILLATIONTIMECONSTANT2"   value="15.*ns"/>
       <constant name="SCINTILLATIONRISETIME1"       value="0.01*ns"/>
@@ -956,7 +1029,7 @@
       <property name="RINDEX"                       ref="RI_LYSO"/>
       <property name="ABSLENGTH"                    ref="AbsLen_LYSO"/>
       <property name="SCINTILLATIONCOMPONENT1"      ref="scintFast_LYSO"/>
-      <constant name="SCINTILLATIONYIELD"           value="33200/MeV"/>
+      <constant name="SCINTILLATIONYIELD"           value="1000/MeV"/>
       <constant name="SCINTILLATIONTIMECONSTANT1"   value="40.*ns"/>
       <constant name="SCINTILLATIONRISETIME1"       value="0.1*ns"/>
       <constant name="RESOLUTIONSCALE"              value="3.4"/>
@@ -973,27 +1046,53 @@
   </info>
 
   <readouts>
-    <readout name="SCEPCal_readout">
-      <segmentation type="SCEPCalSegmentation"/>
-      <id>system:4,eta:11,phi:11,depth:4</id>
+    <!-- Different segmentations used to accommodate different granularities in main and timing layer -->
+    <!--  -->
+    <!-- System supposed to be fixed at 5 bits (is this really necessary?) -->
+    <!-- Phi - divide detector into phi slices, max 128 phi segments for 7 bits -->
+    <!-- Eta - divide phi slice into slabs in theta -->
+    <!-- Gamma - tower index within theta (divide a theta slab into square NxN crystal towers in phi), max 16 values -->
+    <!-- Epsilon - crystal index inside NxN tower, max 16 values (4x4 crystal tower) -->
+    <!-- Depth - front/rear depth index -->
+    <!--  -->
+    <!-- Note: -->
+    <!-- 1cm crystals with 64 phi segments instead of 128 would exceed 16 in gamma -->
+    <!-- 2048 theta values is ok for the main layer since the crystals are not imagined to be much smaller than 1cm -->
+    <!-- for the timing layer they can be as thin as 2mm, and with a ~4.8m span in Z that is roughly 2400 values, -->
+    <!-- which exceeds 11 bits, therefore a separate segmentation for the timing layer is used, without epsilon and depth -->
+    <!--  -->
+    <readout name="SCEPCal_MainLayer">
+      <segmentation type="SCEPCal_MainSegmentation"/>
+      <id>system:5,phi:7,theta:11,gamma:4,epsilon:4,depth:1</id>
+    </readout>
+    <readout name="SCEPCal_TimingLayer">
+      <segmentation type="SCEPCal_TimingSegmentation"/>
+      <id>system:5,phi:7,theta:14,gamma:6</id>
     </readout>
   </readouts>
 
   <display>
-    <vis name="projectiveFillFVis"  alpha="1"   r="0.5"  g="0.0"  b="1.0"  showDaughters="true"  visible="true"/>
-    <vis name="projectiveFillRVis"  alpha="1"   r="0.5"  g="0.5"  b="0.0"  showDaughters="true"  visible="true"/>
-    <vis name="crystalFVis"  alpha="1"   r="0.0"  g="0.0"  b="1.0"  showDaughters="true"  visible="true"/>
-    <vis name="crystalRVis"  alpha="1"   r="0.0"  g="0.5"  b="1.0"  showDaughters="true"  visible="true"/>
-    <vis name="timingVisTr"  alpha="1"   r="0.0"  g="1.0"  b="0.1"  showDaughters="true"  visible="true"/>
-    <vis name="timingVisLg"  alpha="1"   r="1.0"  g="0.3"  b="0.0"  showDaughters="true"  visible="true"/>
-    <vis name="sipmVisTr"    alpha="1"   r="0.1"  g="0.1"  b="0.7"  showDaughters="true"  visible="true"/>
-    <vis name="sipmVisLg"    alpha="1"   r="0.0"  g="0.5"  b="0.5"  showDaughters="true"  visible="true"/>
-    <vis name="instVis"      alpha="0"   r="0.1"  g="0.1"  b="0.1"  showDaughters="true"  visible="false"/>
-    <vis name="scepcalAssemblyVis"        alpha="0.3" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
-    <vis name="timingAssemblyGlobalVis"  alpha="0.5" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
-    <vis name="barrelAssemblyGlobalVis"  alpha="0.5" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
-    <vis name="endcapAssemblyGlobalVis"  alpha="0.5" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
-    <vis name="scepcalAssemblyGlobalVis"  alpha="0.5" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
+    <vis name="crystalFVis"  alpha="1"   r="0.0"  g="0.0"  b="1.0"  showDaughters="true"  visible="false"/>
+    <vis name="crystalRVis"  alpha="1"   r="0.0"  g="0.5"  b="1.0"  showDaughters="true"  visible="false"/>
+    <vis name="crystalTVis"  alpha="1"   r="0.0"  g="1.0"  b="0.1"  showDaughters="true"  visible="false"/>
+
+    <vis name="barrelAssemblyGlobalVis"  alpha="0.1" r="1."  g="0."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="barrelAssemblyPhiVis"     alpha="0.1" r="0."  g="1."  b="0."  showDaughters="true"  visible="true"/>
+    <vis name="barrelAssemblyThetaVis"   alpha="0.1" r="0."  g="0."  b="1."  showDaughters="true"  visible="false"/>
+    
+    <vis name="endcapAssemblyGlobalVis"  alpha="0.1" r="1."  g="0."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="endcapAssemblyPhiVis"     alpha="0.1" r="0."  g="1."  b="0."  showDaughters="true"  visible="true"/>
+    <vis name="endcapAssemblyThetaVis"   alpha="0.1" r="0."  g="0."  b="1."  showDaughters="true"  visible="false"/>
+
+    <vis name="tlbarrelAssemblyGlobalVis"  alpha="0.1" r="1."  g="0."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="tlbarrelAssemblyPhiVis"     alpha="0.1" r="0."  g="1."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="tlbarrelAssemblyThetaVis"   alpha="0.1" r="0."  g="0."  b="1."  showDaughters="true"  visible="false"/>
+
+    <vis name="tlendcapAssemblyGlobalVis"  alpha="0.1" r="1."  g="0."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="tlendcapAssemblyPhiVis"     alpha="0.1" r="0."  g="1."  b="0."  showDaughters="true"  visible="false"/>
+    <vis name="tlendcapAssemblyThetaVis"   alpha="0.1" r="0."  g="0."  b="1."  showDaughters="true"  visible="false"/>
+
+    <vis name="scepcalAssemblyGlobalVis" alpha="0.5" r="0.1"  g="0.2"  b="0.1"  showDaughters="true"  visible="false"/>
   </display>
 
   <define>
@@ -1003,48 +1102,124 @@
     <constant name="world_z" value="world_size/2."/>
     <constant name="tracker_region_rmax" value="200.0*m"/>
     <constant name="tracker_region_zmax" value="200.0*m"/>
+
+    <!-- Likely do not need to be changed -->
+    <constant name="scepcal_barrel_half_z" value="2.45*m"/>
+    <constant name="scepcal_barrel_inner_r" value="2.25*m"/>
+    <constant name="scepcal_phi_segments" value="128"/>
+    <constant name="scepcal_beampipe_opening" value="45*cm"/>
+    <constant name="scepcal_mainlayer_reargap" value="1*cm"/>
+    <constant name="scepcal_timinglayer_gap" value="1*cm"/>
+    <constant name="scepcal_projective_offset_r" value="10*cm"/>
+    <constant name="scepcal_projective_offset_x" value="10*cm"/>
+
+    <!-- Nominal square width of a single crystal tower -->
+    <constant name="scepcal_xtal_theta_width" value="1*cm"/>
+
+    <!-- Square NxN divisions of front/rear crystals in a single tower -->
+    <constant name="scepcal_xtal_divisions_f" value="1"/>
+    <constant name="scepcal_xtal_divisions_r" value="1"/>
+
+    <!-- Longitudinal length of front/rear crystals -->
+    <constant name="scepcal_xtal_length_f" value="5*cm"/>
+    <constant name="scepcal_xtal_length_r" value="15*cm"/>
+
+    <!-- Timing crystals -->
+    <constant name="scepcal_timing_xtal_depth" value="5*mm"/>
+    <constant name="scepcal_timing_xtal_length" value="10*cm"/>
   </define>
 
   <detectors>
+
     <detector id="4"
-              name="SCEPCal"
-              type="SegmentedCrystalECAL" 
-              readout="SCEPCal_readout"
+              name="SCEPCal_MainLayer"
+              type="SCEPCal_MainLayer" 
+              readout="SCEPCal_MainLayer"
               vis="scepcalAssemblyGlobalVis"
               sensitive="true">
-      <sensitive type="SegmentedCrystalCalorimeter"/>
+      <sensitive type="calorimeter"/>
 
-      <timing construct="false" phistart="0" phiend="128"/>
-      <barrel construct="true" phistart="0" phiend="128"/>
-      <endcap construct="true" phistart="0" phiend="128" thetastart="35"/>
+      <dim    barrelHalfZ="scepcal_barrel_half_z"
+              barrelInnerR="scepcal_barrel_inner_r" 
 
-      <dim    barrelHalfZ="2.40*m"
-              barrelInnerR="2.25*m" 
-              crystalFaceWidthNominal="10*mm"
-              crystalFlength="50*mm"
-              crystalRlength="150*mm"
-              crystalTimingThicknessNominal="3*mm"
-              sipmThickness="0.5*mm"
-              phiSegments="128"
-              projectiveFill="3"
+              crystalThetaWidth="scepcal_xtal_theta_width"
+
+              crystalDivisionsF="scepcal_xtal_divisions_f"
+              crystalDivisionsR="scepcal_xtal_divisions_r"
+              
+              crystalFlength="scepcal_xtal_length_f"
+              crystalRlength="scepcal_xtal_length_r"
+              
+              beampipe_opening="scepcal_beampipe_opening"
+              rear_gap="scepcal_mainlayer_reargap"
+              
+              phiSegments="scepcal_phi_segments"
+              
+              projectiveOffsetR="scepcal_projective_offset_r"
+              projectiveOffsetX="scepcal_projective_offset_x"
+              
+              useOpticalSurfaces="false"
       />
 
-      <projF                                    vis="projectiveFillFVis"/>
-      <projR                                    vis="projectiveFillRVis"/>
-      <crystalF        material="PbWO"          vis="crystalFVis"/>
-      <crystalR        material="PbWO"          vis="crystalRVis"/>
-      <timingLayerLg   material="LYSO"          vis="timingVisLg"/>
-      <timingLayerTr   material="LYSO"          vis="timingVisTr"/>
-      <inst            material="AluminumOxide" vis="instVis"/>
-      <sipmLg          material="Silicon"       vis="sipmVisLg"/>
-      <sipmTr          material="Silicon"       vis="sipmVisTr"/>
+      <barrel    system="4" construct="true"/>
+      <endcap    system="5" construct="true"/>
 
-      <scepcalAssembly          vis="scepcalAssemblyVis"/>
-      <timingAssemblyGlobalVis  vis="timingAssemblyGlobalVis"/>
+      <crystalF  material="PbWO"          vis="crystalFVis"/>
+      <crystalR  material="PbWO"          vis="crystalRVis"/>
+
       <barrelAssemblyGlobalVis  vis="barrelAssemblyGlobalVis"/>
+      <barrelAssemblyPhiVis     vis="barrelAssemblyPhiVis"/>
+      <barrelAssemblyThetaVis   vis="barrelAssemblyThetaVis"/>
+      
       <endcapAssemblyGlobalVis  vis="endcapAssemblyGlobalVis"/>
+      <endcapAssemblyPhiVis     vis="endcapAssemblyPhiVis"/>
+      <endcapAssemblyThetaVis   vis="endcapAssemblyThetaVis"/>
+
       <scepcalAssemblyGlobalVis vis="scepcalAssemblyGlobalVis"/>
     </detector>
+
+    <detector id="6"
+              name="SCEPCal_TimingLayer"
+              type="SCEPCal_TimingLayer" 
+              readout="SCEPCal_TimingLayer"
+              vis="scepcalAssemblyGlobalVis"
+              sensitive="true">
+      <sensitive type="calorimeter"/>
+
+      <dim    barrelHalfZ="scepcal_barrel_half_z"
+              barrelInnerR="scepcal_barrel_inner_r" 
+
+              crystalThetaWidth="scepcal_xtal_theta_width"
+
+              crystalTdepth="scepcal_timing_xtal_depth"
+              crystalTlength="scepcal_timing_xtal_length"
+
+              beampipe_opening="scepcal_beampipe_opening"
+              timing_gap="scepcal_timinglayer_gap"
+              
+              phiSegments="scepcal_phi_segments"
+              projectiveOffsetR="scepcal_projective_offset_r"
+              
+              useOpticalSurfaces="false"
+      />
+
+      <tlbarrel  system="6" construct="true"/>
+      <tlendcap  system="7" construct="true"/>
+
+      <crystalT  material="LYSO"          vis="crystalTVis"/>
+
+      <tlbarrelAssemblyGlobalVis  vis="tlbarrelAssemblyGlobalVis"/>
+      <tlbarrelAssemblyPhiVis     vis="tlbarrelAssemblyPhiVis"/>
+      <tlbarrelAssemblyThetaVis   vis="tlbarrelAssemblyThetaVis"/>
+
+      <tlendcapAssemblyGlobalVis  vis="tlendcapAssemblyGlobalVis"/>
+      <tlendcapAssemblyPhiVis     vis="tlendcapAssemblyPhiVis"/>
+      <tlendcapAssemblyThetaVis   vis="tlendcapAssemblyThetaVis"/>
+
+      <scepcalAssemblyGlobalVis vis="scepcalAssemblyGlobalVis"/>
+    </detector>
+
+
   </detectors>
 
 </lccdd>
